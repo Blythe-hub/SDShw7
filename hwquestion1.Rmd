@@ -1,0 +1,156 @@
+---
+title: "Hw question #1"
+author: "Varun Venkatesh"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+#Problem 1: Armfolding
+
+A. Loading and examining the data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load data
+armfold <- read.csv("armfold.csv")
+
+# Number of male and female students
+table(armfold$Sex)
+
+# Proportion of males who folded left arm on top
+male_data <- subset(armfold, Sex == "Male")
+prop_males_left <- mean(male_data$LonR_fold)
+prop_males_left
+
+# Proportion of females who folded left arm on top
+female_data <- subset(armfold, Sex == "Female")
+prop_females_left <- mean(female_data$LonR_fold)
+prop_females_left
+```
+#A. Loading and examining the data
+
+Based on the results:
+
+Number of male students: 106
+
+Number of female students: 111
+
+Sample proportion of males who folded left arm on top: 0.4716981 (approximately 47.17%)
+
+Sample proportion of females who folded left arm on top: 0.4234234 (approximately 42.34%)
+
+#B. Observed difference in proportions
+
+The observed difference in proportions (males minus females) is:
+
+
+```{r cars}
+diff_prop <- prop_males_left - prop_females_left
+diff_prop
+```
+
+The observed difference in proportions (males minus females) is 0.04827469 (approximately 4.83 percentage points).
+
+#C. Computing 95% confidence interval
+
+```{r pressure, echo=FALSE}
+# Using prop.test to calculate confidence interval
+prop_test_result <- prop.test(
+  x = c(sum(male_data$LonR_fold), sum(female_data$LonR_fold)),
+  n = c(nrow(male_data), nrow(female_data)),
+  correct = FALSE
+)
+prop_test_result$conf.int
+```
+
+Using R's built-in prop.test() function, the 95% confidence interval is:
+
+[-0.08393731, 0.18048668]
+
+When calculating manually:
+
+The standard error is 0.06745634
+
+Using z* = 1.96 for a 95% confidence level
+
+The resulting confidence interval is [-0.08393973, 0.18048911]
+
+These results match very closely, with only minor rounding differences.
+
+The formula used for the standard error was:
+
+SE(p₁ - p₂) = √[p₁(1-p₁)/n₁ + p₂(1-p₂)/n₂]
+
+Where:
+
+p₁ = 0.4716981 (proportion of males with left arm on top)
+
+p₂ = 0.4234234 (proportion of females with left arm on top)
+
+n₁ = 106 (number of males)
+
+n₂ = 111 (number of females)
+
+```{r}
+# Standard error calculation
+se <- sqrt((prop_males_left * (1 - prop_males_left) / nrow(male_data)) + 
+           (prop_females_left * (1 - prop_females_left) / nrow(female_data)))
+se
+
+# For 95% confidence interval, we use z* = 1.96
+z_star <- 1.96
+
+# Calculate confidence interval
+lower_bound <- diff_prop - z_star * se
+upper_bound <- diff_prop + z_star * se
+c(lower_bound, upper_bound)
+```
+Using 1.96 for a 95% Confidence Level
+
+I use 1.96 because for a 95% confidence level, 1.96 standard deviations on each side of the mean capture the middle 95% of a normal distribution. That’s why my critical value is 1.96.
+
+D. Interpreting the Confidence Interval
+
+Imagine I take many random samples from the same population and calculate the difference in proportions for each sample. If I did that many times, about 95% of the confidence intervals I build would contain the true difference between males and females. For example, if my interval is −0.08393731,0.18048668
+it means that if I repeated the study, 95% of the time the true difference would be somewhere between –8.4% and 18.0%.
+
+E. Meaning of Standard Error
+
+The standard error (0.06745634) shows me how much the difference between sample proportions might change just by chance. I think of it as a measure of “wiggle room” in my estimate. A smaller standard error means my estimate is more stable. In my case, it tells me how much the difference in the proportion of males and females who fold their arms with the left arm on top might vary from one sample to another.
+
+F. Sampling Distribution in This Context
+
+The sampling distribution is a way for me to think about what would happen if I took many samples of the same size (for example, 106 males and 111 females) from the population. Each sample would give me a slightly different difference in proportions because the people in each sample are different. What changes from sample to sample is the actual individuals and their preferences; what stays the same is the true population difference, my sample sizes, and my method of sampling.
+
+G. Mathematical Justification for Normal Approximation
+
+The Central Limit Theorem tells me that when I have a large enough sample, the distribution of the difference in proportions will look like a normal (bell-shaped) curve—even if the original data isn’t normally distributed. For proportions, I need both np and n(1-p) greater than 5. In my data:
+
+For males:
+
+106 × 0.4717 ≈ 50
+
+
+106 × 0.5283 ≈ 56
+
+
+For females:
+
+111 × 0.4234 ≈ 47
+
+
+111 × 0.5766 ≈ 64
+
+
+These numbers show my sample sizes are large enough to use the normal approximation.
+
+H. Interpreting the Confidence Interval
+
+The interval
+[−0.08393731,0.18048668] tells me that the true difference in proportions between males and females might be as low as –8.4% (in favor of females) or as high as 18.0% (in favor of males). Since zero is inside this range, my data do not show a clear difference. In simple words, I cannot confidently say that there is a significant difference in arm folding preferences between the sexes. More data might be needed to be sure.
+
+I. Variation in Confidence Intervals Across Samples
+
+If I repeated the experiment with different groups of students, the confidence interval would change each time because each sample is a bit different. However, the idea behind a 95% confidence interval is that if I repeated this many times, about 95% of those intervals would capture the true difference in the population. Some intervals might be a little wider or shifted a bit, but most would include the real value.

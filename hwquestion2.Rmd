@@ -1,0 +1,281 @@
+---
+title: "hw question #2"
+author: "Varun Venkatesh"
+date: "`r Sys.Date()`"
+output: html_document
+---
+## part A
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Read in the data
+data <- read.csv("turnout.csv")
+
+# Calculate the proportion of voters in 1998 for those who received a GOTV call
+prop_called <- mean(data$voted1998[data$GOTV_call == 1])
+
+# Calculate the proportion of voters in 1998 for those who did NOT receive a GOTV call
+prop_not_called <- mean(data$voted1998[data$GOTV_call == 0])
+
+# Print the proportions
+cat("Proportion with GOTV call who voted in 1998:", prop_called, "\n")
+cat("Proportion without GOTV call who voted in 1998:", prop_not_called, "\n")
+
+# Calculate the difference in proportions
+diff_prop <- prop_called - prop_not_called
+
+# Compute the number of individuals in each group
+n_called <- sum(data$GOTV_call == 1)
+n_not_called <- sum(data$GOTV_call == 0)
+
+# Calculate the standard error for the difference in proportions
+se_diff <- sqrt((prop_called * (1 - prop_called) / n_called) +
+                (prop_not_called * (1 - prop_not_called) / n_not_called))
+
+# Set the z-score for a 95% confidence interval (approx. 1.96)
+z <- 1.96
+
+# Calculate the confidence interval
+lower_bound <- diff_prop - z * se_diff
+upper_bound <- diff_prop + z * se_diff
+
+# Output the difference and the confidence interval
+cat("Difference in proportions (GOTV call - No GOTV call):", diff_prop, "\n")
+cat("95% Confidence Interval for the difference: [", lower_bound, ",", upper_bound, "]\n")
+
+```
+
+About 64.8% of those who received a GOTV call voted in 1998.
+
+About 44.4% of those who did not receive a GOTV call voted in 1998.
+
+The difference in proportions is approximately 20.35 percentage points.
+
+The 95% confidence interval for the difference is approximately [0.1432, 0.2638].
+
+This indicates that receiving a GOTV call is associated with a statistically significant increase in the likelihood of voting in 1998.
+
+
+Calculating Proportions:
+The proportion of those who voted in 1998 is computed separately for individuals with and without a GOTV call using the mean() function (which works because voted1998 is coded as 0/1).
+
+Difference & Standard Error:
+The difference in proportions is computed and then the standard error is calculated using the formula:
+SE= sqrt(p1(1-p1)/n1 + p2(1-p2)/n2)
+Confidence Interval:
+A 95% confidence interval is constructed using the formula:
+
+Difference ± 1.96 x SE
+
+
+## part B
+
+```{r part b}
+# Read in the data
+data <- read.csv("turnout.csv")
+
+
+# 1. Summary statistics by GOTV_call
+
+# Create a summary table for voted1996, AGE, and MAJORPTY by GOTV_call
+summary_stats <- aggregate(cbind(voted1996, AGE, MAJORPTY) ~ GOTV_call, data = data, FUN = mean)
+print(summary_stats)
+
+
+# 2. Calculate differences and 95% CIs for each confounder
+
+
+# Set z-score for 95% CI (large-sample approximation)
+z <- 1.96
+
+# (a) Prior voting in 1996 (binary)
+prop_voted1996_called <- mean(data$voted1996[data$GOTV_call == 1])
+prop_voted1996_not_called <- mean(data$voted1996[data$GOTV_call == 0])
+diff_voted1996 <- prop_voted1996_called - prop_voted1996_not_called
+n_called <- sum(data$GOTV_call == 1)
+n_not_called <- sum(data$GOTV_call == 0)
+se_voted1996 <- sqrt((prop_voted1996_called * (1 - prop_voted1996_called) / n_called) +
+                       (prop_voted1996_not_called * (1 - prop_voted1996_not_called) / n_not_called))
+ci_voted1996_lower <- diff_voted1996 - z * se_voted1996
+ci_voted1996_upper <- diff_voted1996 + z * se_voted1996
+
+cat("Difference in 1996 voting proportions (GOTV - No GOTV):", diff_voted1996, "\n")
+cat("95% CI: [", ci_voted1996_lower, ",", ci_voted1996_upper, "]\n\n")
+
+# (b) AGE (continuous)
+mean_age_called <- mean(data$AGE[data$GOTV_call == 1])
+mean_age_not_called <- mean(data$AGE[data$GOTV_call == 0])
+diff_age <- mean_age_called - mean_age_not_called
+
+# Use a two-sample t-test for AGE difference and CI (large-sample approximation is appropriate with large n)
+t_age <- t.test(AGE ~ GOTV_call, data = data)
+cat("Difference in mean AGE (GOTV - No GOTV):", diff_age, "\n")
+cat("95% CI (from t-test): [", t_age$conf.int[1], ",", t_age$conf.int[2], "]\n\n")
+
+# (c) MAJORPTY (binary)
+prop_majorpty_called <- mean(data$MAJORPTY[data$GOTV_call == 1])
+prop_majorpty_not_called <- mean(data$MAJORPTY[data$GOTV_call == 0])
+diff_majorpty <- prop_majorpty_called - prop_majorpty_not_called
+se_majorpty <- sqrt((prop_majorpty_called * (1 - prop_majorpty_called) / n_called) +
+                      (prop_majorpty_not_called * (1 - prop_majorpty_not_called) / n_not_called))
+ci_majorpty_lower <- diff_majorpty - z * se_majorpty
+ci_majorpty_upper <- diff_majorpty + z * se_majorpty
+
+cat("Difference in MAJORPTY proportions (GOTV - No GOTV):", diff_majorpty, "\n")
+cat("95% CI: [", ci_majorpty_lower, ",", ci_majorpty_upper, "]\n")
+
+
+# 3.Plotting 
+
+# Plot AGE distribution by GOTV_call
+boxplot(AGE ~ GOTV_call, data = data,
+        names = c("No GOTV", "GOTV"),
+        main = "Boxplot of AGE by GOTV Call Status",
+        ylab = "Age")
+
+# Barplot for voted1996 proportions by GOTV_call
+prop_voted1996 <- tapply(data$voted1996, data$GOTV_call, mean)
+barplot(prop_voted1996,
+        names.arg = c("No GOTV", "GOTV"),
+        main = "Proportion Voted in 1996 by GOTV Call Status",
+        ylab = "Proportion Voting in 1996")
+
+# Barplot for MAJORPTY proportions by GOTV_call
+prop_majorpty <- tapply(data$MAJORPTY, data$GOTV_call, mean)
+barplot(prop_majorpty,
+        names.arg = c("No GOTV", "GOTV"),
+        main = "Proportion in Major Party by GOTV Call Status",
+        ylab = "Proportion in Major Party")
+
+```
+Prior Voting (voted1996):
+
+No GOTV Call: I observed that about 53.1% voted in 1996.
+
+GOTV Call: I observed that about 71.2% voted in 1996.
+
+Difference: Those who received the call were about 18.2 percentage points more likely to have voted in 1996.
+
+95% CI: [12.45%, 23.90%].
+
+This indicates that the call group already had a higher voting rate before the campaign.
+
+Age (AGE):
+
+No GOTV Call: The average age is about 49.43 years.
+
+GOTV Call: The average age is about 58.31 years.
+
+Difference: The GOTV group is roughly 8.9 years older.
+
+Note: A t-test might show a negative number if I reverse the order of subtraction, but it is clear that the call group is older.
+
+Major Party Registration (MAJORPTY):
+
+No GOTV Call: About 74.5% are registered with a major party.
+
+GOTV Call: About 80.2% are registered with a major party.
+
+Difference: There is a 5.7 percentage point higher registration rate in the GOTV group.
+
+95% CI: [0.64%, 10.73%].
+
+Why It Matters:
+
+These differences show that the people who received the GOTV call were already different—they were more likely to vote before, they were older, and they were more often registered with a major party. Since these factors also make someone more likely to vote in 1998, they confound the effect of the GOTV call. This means that the simple difference in 1998 voting rates might not be solely due to the GOTV call; it could also be because the two groups differ in these important ways.
+
+## part C
+
+```{r part C, echo=FALSE}
+# Install and load MatchIt if not already installed
+if(!require(MatchIt)){
+  install.packages("MatchIt")
+  library(MatchIt)
+}
+
+# 1. Perform Matching
+# Match using GOTV_call as treatment and voted1996, AGE, MAJORPTY as matching variables.
+m.out <- matchit(GOTV_call ~ voted1996 + AGE + MAJORPTY, data = data, 
+                 method = "nearest", ratio = 5)
+matched_data <- match.data(m.out)
+
+# 2. Check Balance in the Matched Data
+# Create a summary table: average values of voted1996, AGE, and MAJORPTY by treatment group.
+balance_table <- aggregate(cbind(voted1996, AGE, MAJORPTY) ~ GOTV_call, 
+                             data = matched_data, FUN = mean)
+print("Balance Table (Means by GOTV_call):")
+print(balance_table)
+
+# For the binary variables, compute differences and 95% CIs.
+z <- 1.96  # z-score for 95% CI
+
+# (a) Prior Voting (voted1996)
+prop_voted1996_treated <- mean(matched_data$voted1996[matched_data$GOTV_call == 1])
+prop_voted1996_control <- mean(matched_data$voted1996[matched_data$GOTV_call == 0])
+diff_voted1996 <- prop_voted1996_treated - prop_voted1996_control
+n_treated <- sum(matched_data$GOTV_call == 1)
+n_control <- sum(matched_data$GOTV_call == 0)
+se_voted1996 <- sqrt((prop_voted1996_treated*(1-prop_voted1996_treated)/n_treated) +
+                     (prop_voted1996_control*(1-prop_voted1996_control)/n_control))
+ci_voted1996_lower <- diff_voted1996 - z*se_voted1996
+ci_voted1996_upper <- diff_voted1996 + z*se_voted1996
+
+cat("Matched difference in voted1996 (Treated - Control):", diff_voted1996, "\n")
+cat("95% CI:", ci_voted1996_lower, "to", ci_voted1996_upper, "\n\n")
+
+# (b) AGE: Use a t-test to compare means
+t_age <- t.test(AGE ~ GOTV_call, data = matched_data)
+# Note: t.test() reports difference as (group1 - group2) based on factor levels.
+cat("Matched difference in AGE (as reported by t.test):", 
+    t_age$estimate[1] - t_age$estimate[2], "\n")
+cat("95% CI for AGE difference:", t_age$conf.int[1], "to", t_age$conf.int[2], "\n\n")
+
+# (c) MAJORPTY
+prop_majorpty_treated <- mean(matched_data$MAJORPTY[matched_data$GOTV_call == 1])
+prop_majorpty_control <- mean(matched_data$MAJORPTY[matched_data$GOTV_call == 0])
+diff_majorpty <- prop_majorpty_treated - prop_majorpty_control
+se_majorpty <- sqrt((prop_majorpty_treated*(1-prop_majorpty_treated)/n_treated) +
+                    (prop_majorpty_control*(1-prop_majorpty_control)/n_control))
+ci_majorpty_lower <- diff_majorpty - z*se_majorpty
+ci_majorpty_upper <- diff_majorpty + z*se_majorpty
+
+cat("Matched difference in MAJORPTY (Treated - Control):", diff_majorpty, "\n")
+cat("95% CI:", ci_majorpty_lower, "to", ci_majorpty_upper, "\n\n")
+
+# If matching worked well, these differences should be very small and the CIs should include 0.
+
+# 3. Reanalyze the Effect on 1998 Voting Using the Matched Data
+prop_voted1998_treated <- mean(matched_data$voted1998[matched_data$GOTV_call == 1])
+prop_voted1998_control <- mean(matched_data$voted1998[matched_data$GOTV_call == 0])
+diff_voted1998 <- prop_voted1998_treated - prop_voted1998_control
+n_treated_voted <- sum(matched_data$GOTV_call == 1)
+n_control_voted <- sum(matched_data$GOTV_call == 0)
+se_voted1998 <- sqrt((prop_voted1998_treated*(1-prop_voted1998_treated)/n_treated_voted) +
+                     (prop_voted1998_control*(1-prop_voted1998_control)/n_control_voted))
+ci_voted1998_lower <- diff_voted1998 - z*se_voted1998
+ci_voted1998_upper <- diff_voted1998 + z*se_voted1998
+
+cat("Matched Proportion of 1998 voting (Treated):", prop_voted1998_treated, "\n")
+cat("Matched Proportion of 1998 voting (Control):", prop_voted1998_control, "\n")
+cat("Matched difference in 1998 voting (Treated - Control):", diff_voted1998, "\n")
+cat("95% CI for difference:", ci_voted1998_lower, "to", ci_voted1998_upper, "\n")
+
+```
+Balance Check (voted1996, AGE, MAJORPTY):
+
+voted1996: I found that the difference between the treated and control groups is near zero, and the confidence interval includes zero.
+
+AGE: The difference is about –0.04 years, and its 95% confidence interval also spans zero.
+
+MAJORPTY: The difference is about –0.006, with the 95% confidence interval crossing zero.
+
+These very small differences (all close to 0) show that my matched sample is balanced—the treated and control groups look almost identical in terms of prior voting, age, and party registration.
+
+Effect on 1998 Voting (voted1998):
+
+Treated (GOTV_call = 1): About 64.8% voted in 1998.
+
+Control (GOTV_call = 0): About 56.9% voted in 1998.
+
+Difference: The difference is about 7.85 percentage points, with a 95% confidence interval roughly between [1.29%, 14.42%].
+
+This difference (≈8%) is smaller than the naive difference (≈20%) I saw before matching. After controlling for the confounders, I still see a positive effect of the GOTV call on 1998 voting, but it is more modest once I account for differences in prior voting history, age, and party registration.
